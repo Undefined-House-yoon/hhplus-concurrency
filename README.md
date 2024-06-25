@@ -20,6 +20,28 @@
 
 ## Description
 
+application/
+├── controller/
+│   ├── application.controller.spec.ts
+│   └── application.controller.ts
+├── domain/
+│   ├── dto/
+│   │   ├── create-application.dto.ts
+│   │   └── update-application.dto.ts
+│   ├── entities/
+│   │   └── application.entity.ts
+│   ├── repositories/
+│   │   ├── application.repository.ts
+│   │   └── application.repository.impl.ts
+│   └── services/
+│       └── application.service.ts
+├── infrastructure/
+│   └── services/
+│       └── application.service.impl.ts
+├── application.module.ts
+└── test/
+└── application.service.spec.ts
+
 [Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
 
 ## Installation
@@ -58,3 +80,12 @@ $ npm run test:cov
 ## License
 
 Nest is [MIT licensed](LICENSE).
+
+
+
+application/ports/inbound/: 입력 포트를 정의합니다. 주로 애플리케이션 서비스 인터페이스를 포함합니다.
+application/ports/outbound/: 출력 포트를 정의합니다. 주로 리포지토리 인터페이스를 포함합니다.
+domain/entities/: 도메인 엔티티를 정의합니다.
+infrastructure/adapters/in/: 입력 어댑터를 정의합니다. 주로 웹 컨트롤러를 포함합니다.
+infrastructure/adapters/out/: 출력 어댑터를 정의합니다. 주로 리포지토리 구현체를 포함합니다.
+infrastructure/orm/: ORM 설정 파일을 포함합니다.
