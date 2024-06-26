@@ -10,6 +10,7 @@ export class LectureServiceImpl implements LectureService {
   constructor(private readonly lectureRepository: LectureRepository) {}
 
   // async apply(applyLectureDto: ApplyLectureDto): Promise<boolean> {
+
   //   // const status = await this.applicationRepository.apply(applyLectureDto);
   //   const lecture: Lecture = await this.lectureRepository.getLectureById(
   //     applyLectureDto.lectureId,
@@ -40,6 +41,7 @@ export class LectureServiceImpl implements LectureService {
   // }
 
   //이거 생각해보니 여기서 하는거 아니네 이결과값은 중간테이블서 ㄱㄱ
+
   // async getApplicationStatus(userId: number) {
   //   this.lectureRepository.findOne(userId);
   //
