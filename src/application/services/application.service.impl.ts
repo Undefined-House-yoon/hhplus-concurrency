@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { ApplicationService } from '../ports/inbound/application.service';
 import { Application } from '../../domain/entities/application.entity';
 import { ApplyLectureDto } from '../dto/apply-lecture.dto';
@@ -11,6 +11,7 @@ import { Lecture } from '../../domain/entities/lecture.entity';
 
 @Injectable()
 export class ApplicationServiceImpl implements ApplicationService {
+  private readonly logger = new Logger(ApplicationService.name);
   constructor(
     private readonly userRepository: UserRepository,
     private readonly lectureRepository: LectureRepository,
@@ -18,44 +19,34 @@ export class ApplicationServiceImpl implements ApplicationService {
     private readonly dataSource: DataSource, // DataSource 주입
   ) {}
 
-  private async runInTransaction<T>(
-    callback: (queryRunner: QueryRunner) => Promise<T>,
-  ): Promise<T> {
+  async applyLecture(applyLectureDto: ApplyLectureDto): Promise<boolean> {
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
-    await queryRunner.startTransaction('SERIALIZABLE');
+    await queryRunner.startTransaction('SERIALIZABLE'); // 트랜잭션 격리 수준 설정
 
     try {
-      const result = await callback(queryRunner);
-      if (result) {
-        await queryRunner.commitTransaction();
-      }
-
-      return result;
-    } catch (error) {
-      await queryRunner.rollbackTransaction();
-      throw error;
-    } finally {
-      await queryRunner.release();
-      return;
-    }
-  }
-
-  async applyLecture(applyLectureDto: ApplyLectureDto): Promise<boolean> {
-    return this.runInTransaction(async queryRunner => {
+      this.logger.log('Transaction started');
       const user = await queryRunner.manager.findOne(User, {
         where: { id: applyLectureDto.userId },
       });
+
+      if (!user) {
+        await queryRunner.rollbackTransaction();
+        this.logger.log('Transaction rolled back: User not found');
+        return false;
+      }
+
       const lecture = await queryRunner.manager.findOne(Lecture, {
         where: { id: applyLectureDto.lectureId },
         lock: { mode: 'pessimistic_write' },
       });
 
-      if (!user || !lecture) {
+      if (!lecture) {
+        await queryRunner.rollbackTransaction();
+        this.logger.log('Transaction rolled back: Lecture not found');
         return false;
       }
 
-      // 트랜잭션 내에서 업데이트
       if (lecture.currentEnrollment < lecture.capacity) {
         lecture.currentEnrollment++;
         await queryRunner.manager.save(lecture);
@@ -64,11 +55,23 @@ export class ApplicationServiceImpl implements ApplicationService {
         application.lecture = lecture;
         application.user = user;
         await queryRunner.manager.save(application);
+
+        await queryRunner.commitTransaction(); // 트랜잭션 커밋, 락 해제
+        this.logger.log('Transaction committed');
         return true;
       } else {
+        await queryRunner.rollbackTransaction(); // 트랜잭션 롤백, 락 해제
+        this.logger.log('Transaction rolled back: Lecture capacity full');
         return false;
       }
-    });
+    } catch (error) {
+      await queryRunner.rollbackTransaction(); // 트랜잭션 롤백, 락 해제
+      this.logger.error('Transaction rolled back: ' + error.message);
+      throw error;
+    } finally {
+      await queryRunner.release(); // QueryRunner 해제
+      this.logger.log('QueryRunner released');
+    }
   }
 
   async hasUserAppliedForLecture(

@@ -101,9 +101,9 @@ describe('ApplicationService', () => {
       service.applyLecture(applyLectureDto),
     );
     const results = await Promise.all(applyPromises);
-    //깔깔깔깔 어머 다들어 가네  <<<<<<< 내 함수 어디갔니?
-    // results.forEach(result => expect(result).toBe(true));
-    expect(results.length).toBe(capacity);
+
+    const successfulApplications = results.filter(result => result === true);
+    expect(successfulApplications.length).toBe(capacity);
   });
 
   it('should check if a user has applied for a lecture', async () => {
