@@ -5,14 +5,14 @@ import { LectureModule } from './lecture.module';
 import { UserModule } from './user.module';
 import { ApplicationModule } from './application.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { typeormConfig } from './infrastructure/orm/typeorm.config';
+import { mysqlConfig } from './infrastructure/orm/typeorm.config';
 
 @Module({
   imports: [
     LectureModule,
     UserModule,
     ApplicationModule,
-    TypeOrmModule.forRoot(typeormConfig),
+    TypeOrmModule.forRoot(mysqlConfig),
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -7,9 +7,11 @@ import { LectureServiceImpl } from './application/services/lecture.service.impl'
 import { LectureRepositoryImpl } from './infrastructure/adapters/out/lecture.repository.impl';
 import { LectureRepository } from './application/ports/outbound/lecture.repository';
 import { ApplicationRepository } from './application/ports/outbound/application.repository';
+import { User } from './domain/entities/user.entity';
+import { AppModule } from './app.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Lecture])],
+  imports: [TypeOrmModule.forFeature([Lecture, User, AppModule])],
   controllers: [LectureController],
   providers: [
     { provide: LectureService, useClass: LectureServiceImpl },

@@ -3,7 +3,7 @@ import { DataSource } from 'typeorm';
 import { Test, TestingModule } from '@nestjs/testing';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { User } from '../../../domain/entities/user.entity';
-import { testTypeormConfig } from '../../../infrastructure/orm/typeorm.config';
+import { mysqlConfig } from '../../../infrastructure/orm/typeorm.config';
 import { Lecture } from '../../../domain/entities/lecture.entity';
 import { Application } from '../../../domain/entities/application.entity';
 import { ApplicationServiceImpl } from '../application.service.impl';
@@ -24,11 +24,14 @@ describe('ApplicationService', () => {
     const module: TestingModule = await Test.createTestingModule({
       imports: [
         TypeOrmModule.forRoot({
-          ...testTypeormConfig,
-          dropSchema: true,
-          extra: {
-            cache: 'shared', // 공유 캐시 모드 활성화
-          },
+          type: 'mysql',
+          host: 'localhost',
+          port: 3306,
+          username: 'root',
+          password: '1234',
+          database: 'test',
+          entities: [User, Lecture, Application],
+          synchronize: true,
         }),
         TypeOrmModule.forFeature([User, Lecture, Application]),
       ],
@@ -46,14 +49,14 @@ describe('ApplicationService', () => {
   });
 
   afterEach(async () => {
-    await dataSource.query('PRAGMA foreign_keys = OFF');
+    await dataSource.query('SET FOREIGN_KEY_CHECKS = 0'); // 외래 키 검사 비활성화
 
     const entities = dataSource.entityMetadatas;
     for (const entity of entities) {
       const repository = dataSource.getRepository(entity.name);
       await repository.clear();
     }
-    await dataSource.query('PRAGMA foreign_keys = ON');
+    await dataSource.query('SET FOREIGN_KEY_CHECKS = 1'); // 외래 키 검사 활성화
   });
 
   afterAll(async () => {
