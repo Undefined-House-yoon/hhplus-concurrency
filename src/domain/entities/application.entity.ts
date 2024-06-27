@@ -1,4 +1,4 @@
-import { Entity, ManyToOne, Unique, CreateDateColumn } from 'typeorm';
+import { Entity, ManyToOne, CreateDateColumn } from 'typeorm';
 import { Lecture } from './lecture.entity';
 import { CommonEntity } from './common.entity';
 import { User } from './user.entity';

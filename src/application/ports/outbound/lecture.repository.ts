@@ -16,5 +16,5 @@ export abstract class LectureRepository {
 
   abstract deleteLecture(id: number): Promise<void>;
 
-  abstract incrementEnrollment(id: number): Promise<void>;
+  abstract incrementEnrollment(lecture: Lecture): Promise<boolean>;
 }

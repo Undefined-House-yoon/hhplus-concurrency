@@ -2,35 +2,30 @@ import { CreateUserDto } from '../dto/create-user.dto';
 import { UpdateUserDto } from '../dto/update-user.dto';
 import { User } from '../../domain/entities/user.entity';
 import { UserService } from '../ports/inbound/user.service';
-import { Repository } from 'typeorm';
-import { InjectRepository } from '@nestjs/typeorm';
 import { Injectable } from '@nestjs/common';
+import { UserRepository } from '../ports/outbound/user.repository';
 
 @Injectable()
-class UserServiceImpl implements UserService {
-  constructor(
-    @InjectRepository(User)
-    private readonly userRepository: Repository<User>,
-  ) {}
+export class UserServiceImpl implements UserService {
+  constructor(private readonly userRepository: UserRepository) {}
 
   async createUser(createUserDto: CreateUserDto): Promise<User> {
-    const user = this.userRepository.create(createUserDto);
-    return this.userRepository.save(user);
+    return await this.userRepository.createUser(createUserDto);
   }
 
-  getUserById(id: number): Promise<User> {
-    throw new Error('Method not implemented.');
+  async getUserById(id: number): Promise<User> {
+    return await this.userRepository.getUserById(id);
   }
 
-  updateUser(id: number, updateUserDto: UpdateUserDto): Promise<void> {
-    throw new Error('Method not implemented.');
+  async updateUser(id: number, updateUserDto: UpdateUserDto): Promise<void> {
+    return await this.userRepository.updateUser(id, updateUserDto);
   }
 
-  deleteUser(id: number): Promise<void> {
-    throw new Error('Method not implemented.');
+  async deleteUser(id: number): Promise<void> {
+    await this.userRepository.deleteUser(id);
   }
 
-  getAllUsers(): Promise<User[]> {
-    throw new Error('Method not implemented.');
+  async getAllUsers(): Promise<User[]> {
+    return this.userRepository.getAllUsers();
   }
 }

@@ -1,7 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { CreateLectureDto } from '../dto/create-lecture.dto';
 import { LectureService } from '../ports/inbound/lecture.service';
-import { ApplyLectureDto } from '../dto/apply-lecture.dto';
 import { LectureRepository } from '../ports/outbound/lecture.repository';
 import { Lecture } from '../../domain/entities/lecture.entity';
 

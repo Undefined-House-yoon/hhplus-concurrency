@@ -26,10 +26,10 @@ export class Lecture extends CommonEntity {
   currentEnrollment: number;
 
   enroll(): boolean {
-    if (this.currentEnrollment >= this.capacity) {
-      return false;
+    if (this.currentEnrollment < this.capacity) {
+      this.currentEnrollment++;
+      return true;
     }
-    this.currentEnrollment++;
-    return true;
+    return false;
   }
 }

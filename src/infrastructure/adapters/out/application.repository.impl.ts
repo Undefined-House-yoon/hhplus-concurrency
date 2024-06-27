@@ -1,38 +1,31 @@
-import { CreateApplicationDto } from '../../../application/dto/create-application.dto';
-import { UpdateApplicationDto } from '../../../application/dto/update-application.dto';
-import { ApplicationRepository } from '../../../application/ports/outbound/application.repository';
 import { Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
+import { Repository, DataSource } from 'typeorm';
 import { Application } from '../../../domain/entities/application.entity';
-import { Repository } from 'typeorm';
+import { ApplicationRepository } from '../../../application/ports/outbound/application.repository';
 
 @Injectable()
-export class ApplicationRepositoryImpl implements ApplicationRepository {
-  constructor(
-    @InjectRepository(Application)
-    private readonly applicationRepository: Repository<Application>,
-  ) {}
-  async create(createApplicationDto: CreateApplicationDto): Promise<void> {
-    const application = this.applicationRepository.create(createApplicationDto);
-    await this.applicationRepository.save(application);
+export class ApplicationRepositoryImpl
+  extends Repository<Application>
+  implements ApplicationRepository
+{
+  constructor(private dataSource: DataSource) {
+    super(Application, dataSource.createEntityManager());
   }
 
-  async findAll(): Promise<Application[]> {
-    return this.applicationRepository.find();
+  async apply(application: Application): Promise<Application> {
+    return this.dataSource.manager.save(application);
   }
 
-  async findOne(id: number): Promise<Application> {
-    return this.applicationRepository.findOne({ where: { id: id } });
-  }
-
-  async remove(id: number): Promise<void> {
-    await this.applicationRepository.delete(id);
-  }
-
-  async update(
-    id: number,
-    updateApplicationDto: UpdateApplicationDto,
-  ): Promise<void> {
-    await this.applicationRepository.update(id, updateApplicationDto);
+  async hasUserAppliedForLecture(
+    userId: number,
+    lectureId: number,
+  ): Promise<boolean> {
+    const application = await this.findOne({
+      where: {
+        user: { id: userId },
+        lecture: { id: lectureId },
+      },
+    });
+    return !!application;
   }
 }

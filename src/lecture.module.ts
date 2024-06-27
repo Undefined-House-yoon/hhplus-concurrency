@@ -16,5 +16,6 @@ import { ApplicationRepository } from './application/ports/outbound/application.
     { provide: LectureRepository, useClass: LectureRepositoryImpl },
     { provide: ApplicationRepository, useClass: LectureServiceImpl },
   ],
+  exports: [LectureService, LectureRepository],
 })
 export class LectureModule {}

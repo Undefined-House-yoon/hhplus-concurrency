@@ -38,12 +38,24 @@ export class LectureRepositoryImpl
     await this.update(id, updateLectureDto);
   }
 
-  async incrementEnrollment(id: number): Promise<void> {
-    const lecture = await this.findOneBy({ id: id });
-    if (lecture.enroll()) {
-      await this.save(lecture);
-      return;
+  async incrementEnrollment(lecture: Lecture): Promise<boolean> {
+    // const lecture = await this.findOneBy({ id: id });
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+    try {
+      if (lecture.enroll()) {
+        await queryRunner.manager.save(lecture);
+        await queryRunner.commitTransaction();
+        return true;
+      }
+      await queryRunner.rollbackTransaction();
+      return false;
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+      throw error;
+    } finally {
+      await queryRunner.release();
     }
-    return;
   }
 }
