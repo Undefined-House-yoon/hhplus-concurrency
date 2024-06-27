@@ -5,7 +5,7 @@ import { ApplyLectureDto } from '../dto/apply-lecture.dto';
 import { UserRepository } from '../ports/outbound/user.repository';
 import { LectureRepository } from '../ports/outbound/lecture.repository';
 import { ApplicationRepository } from '../ports/outbound/application.repository';
-import { DataSource } from 'typeorm';
+import { DataSource, QueryRunner } from 'typeorm';
 import { User } from '../../domain/entities/user.entity';
 import { Lecture } from '../../domain/entities/lecture.entity';
 
@@ -18,36 +18,82 @@ export class ApplicationServiceImpl implements ApplicationService {
     private readonly dataSource: DataSource, // DataSource 주입
   ) {}
 
-  async applyLecture(applyLectureDto: ApplyLectureDto) {
-    return this.dataSource.manager.transaction(
-      'SERIALIZABLE',
-      async transactionalEntityManager => {
-        const user = await transactionalEntityManager.findOne(User, {
-          where: { id: applyLectureDto.userId },
-        });
-        const lecture = await transactionalEntityManager.findOne(Lecture, {
-          where: { id: applyLectureDto.lectureId },
-        });
+  private async executeInTransaction<T>(
+    queryRunner: QueryRunner,
+    callback: (queryRunner: QueryRunner) => Promise<T>,
+  ): Promise<T> {
+    let isTransactionStarted = false;
+    if (!queryRunner.isTransactionActive) {
+      await queryRunner.startTransaction('SERIALIZABLE');
+      isTransactionStarted = true;
+    }
 
-        if (!user || !lecture) {
-          return false;
+    try {
+      const result = await callback(queryRunner);
+      if (isTransactionStarted) {
+        await queryRunner.commitTransaction();
+      }
+      return result;
+    } catch (error) {
+      if (isTransactionStarted) {
+        await queryRunner.rollbackTransaction();
+      }
+      throw error;
+    }
+  }
+
+  private async retryTransaction<T>(
+    fn: () => Promise<T>,
+    retries: number = 3,
+  ): Promise<T> {
+    let attempt = 0;
+    while (attempt < retries) {
+      try {
+        return await fn();
+      } catch (error) {
+        if (attempt === retries - 1) {
+          throw error;
         }
+        attempt++;
+      }
+    }
+  }
 
-        // 트랜잭션 내에서 업데이트
-        if (lecture.currentEnrollment < lecture.capacity) {
-          lecture.currentEnrollment++;
-          await transactionalEntityManager.save(lecture);
+  async applyLecture(applyLectureDto: ApplyLectureDto): Promise<boolean> {
+    return this.retryTransaction(async () => {
+      const queryRunner = this.dataSource.createQueryRunner();
+      await queryRunner.connect();
 
-          const application = new Application();
-          application.lecture = lecture;
-          application.user = user;
-          await transactionalEntityManager.save(application);
-          return true;
-        } else {
-          return false;
-        }
-      },
-    );
+      try {
+        return await this.executeInTransaction(queryRunner, async qr => {
+          const user = await qr.manager.findOne(User, {
+            where: { id: applyLectureDto.userId },
+          });
+          const lecture = await qr.manager.findOne(Lecture, {
+            where: { id: applyLectureDto.lectureId },
+          });
+
+          if (!user || !lecture) {
+            return false;
+          }
+
+          if (lecture.currentEnrollment < lecture.capacity) {
+            lecture.currentEnrollment++;
+            await qr.manager.save(lecture);
+
+            const application = new Application();
+            application.lecture = lecture;
+            application.user = user;
+            await qr.manager.save(application);
+            return true;
+          } else {
+            return false;
+          }
+        });
+      } finally {
+        await queryRunner.release();
+      }
+    });
   }
 
   async hasUserAppliedForLecture(
