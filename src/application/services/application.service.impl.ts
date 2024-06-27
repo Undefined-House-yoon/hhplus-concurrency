@@ -19,48 +19,35 @@ export class ApplicationServiceImpl implements ApplicationService {
   ) {}
 
   async applyLecture(applyLectureDto: ApplyLectureDto) {
-    this.dataSource.manager.transaction('SERIALIZABLE', async (transactionalEntityManager) => {
-    const application = new Application();
-    const queryRunner = this.dataSource.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
-    // 촉은 유저 렉처 조회 이후에 걸까 싶은데 보수적으로 선적용했습니다.
-    try {
-      // const user = await this.userRepository.getUserById(
-      //   applyLectureDto.userId,
-      // );
-      // const lecture = await this.lectureRepository.getLectureById(
-      //   applyLectureDto.lectureId,
-      // );
-      const user = await queryRunner.manager.findOne(User, {
-        where: { id: applyLectureDto.userId },
-      });
-      const lecture = await queryRunner.manager.findOne(Lecture, {
-        where: { id: applyLectureDto.lectureId },
-      });
-      if (!user || !lecture) {
-        await queryRunner.rollbackTransaction();
-        return false;
-      }
+    return this.dataSource.manager.transaction(
+      'SERIALIZABLE',
+      async transactionalEntityManager => {
+        const user = await transactionalEntityManager.findOne(User, {
+          where: { id: applyLectureDto.userId },
+        });
+        const lecture = await transactionalEntityManager.findOne(Lecture, {
+          where: { id: applyLectureDto.lectureId },
+        });
 
-      // 트랜잭션 내에서 인크리먼트 실행
-      const isEnrolled =
-        await this.lectureRepository.incrementEnrollment(lecture);
-      if (isEnrolled) {
-        application.lecture = lecture;
-        application.user = user;
-        await this.applicationRepository.apply(application);
-        await queryRunner.commitTransaction();
-        return true;
-      }
-      await queryRunner.rollbackTransaction();
-      return false;
-    } catch (error) {
-      await queryRunner.rollbackTransaction();
-      return false;
-    } finally {
-      await queryRunner.release();
-    }
+        if (!user || !lecture) {
+          return false;
+        }
+
+        // 트랜잭션 내에서 업데이트
+        if (lecture.currentEnrollment < lecture.capacity) {
+          lecture.currentEnrollment++;
+          await transactionalEntityManager.save(lecture);
+
+          const application = new Application();
+          application.lecture = lecture;
+          application.user = user;
+          await transactionalEntityManager.save(application);
+          return true;
+        } else {
+          return false;
+        }
+      },
+    );
   }
 
   async hasUserAppliedForLecture(

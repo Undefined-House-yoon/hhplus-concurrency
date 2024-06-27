@@ -26,6 +26,9 @@ describe('ApplicationService', () => {
         TypeOrmModule.forRoot({
           ...testTypeormConfig,
           dropSchema: true,
+          extra: {
+            cache: 'shared', // 공유 캐시 모드 활성화
+          },
         }),
         TypeOrmModule.forFeature([User, Lecture, Application]),
       ],
