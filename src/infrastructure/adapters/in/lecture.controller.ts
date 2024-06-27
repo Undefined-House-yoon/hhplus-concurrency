@@ -9,7 +9,6 @@ import {
 } from '@nestjs/common';
 import { LectureService } from '../../../application/ports/inbound/lecture.service';
 import { CreateLectureDto } from '../../../application/dto/create-lecture.dto';
-import { UpdateLectureDto } from '../../../application/dto/update-lecture.dto';
 
 @Controller('lecture')
 export class LectureController {

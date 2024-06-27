@@ -1,45 +1,27 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Patch,
-  Param,
-  Delete,
-} from '@nestjs/common';
-import { ApplicationServiceImpl } from '../../../application/services/application.service.impl';
-import { CreateApplicationDto } from '../../../application/dto/create-application.dto';
-import { UpdateApplicationDto } from '../../../application/dto/update-application.dto';
+import { Controller, Post, Body, Get, Param } from '@nestjs/common';
+import { ApplicationService } from '../../../application/ports/inbound/application.service';
+import { ApplyLectureDto } from '../../../application/dto/apply-lecture.dto';
 
-@Controller('application')
+@Controller('applications')
 export class ApplicationController {
-  constructor(private readonly applicationService: ApplicationServiceImpl) {}
+  constructor(private readonly applicationService: ApplicationService) {}
 
-  // @Post()
-  // create(@Body() createApplicationDto: CreateApplicationDto) {
-  //   return this.applicationService.create(createApplicationDto);
-  // }
-  //
-  // @Get()
-  // findAll() {
-  //   return this.applicationService.findAll();
-  // }
-  //
-  // @Get(':id')
-  // findOne(@Param('id') id: string) {
-  //   return this.applicationService.findOne(+id);
-  // }
-  //
-  // @Patch(':id')
-  // update(
-  //   @Param('id') id: string,
-  //   @Body() updateApplicationDto: UpdateApplicationDto,
-  // ) {
-  //   return this.applicationService.update(+id, updateApplicationDto);
-  // }
-  //
-  // @Delete(':id')
-  // remove(@Param('id') id: string) {
-  //   return this.applicationService.remove(+id);
-  // }
+  @Post('apply')
+  async applyLecture(
+    @Body() applyLectureDto: ApplyLectureDto,
+  ): Promise<boolean> {
+    return this.applicationService.applyLecture(applyLectureDto);
+  }
+
+  @Get('status/:userId/:lectureId')
+  async getApplicationStatus(
+    @Param('userId') userId: number,
+    @Param('lectureId') lectureId: number,
+  ): Promise<{ hasApplied: boolean }> {
+    const hasApplied = await this.applicationService.hasUserAppliedForLecture(
+      userId,
+      lectureId,
+    );
+    return { hasApplied };
+  }
 }
