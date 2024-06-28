@@ -11,14 +11,9 @@
 | Column      | Type        | Constraints            | Description   |
 |-------------|-------------|------------------------|---------------|
 | id          | int         | PK, auto-increment     | 사용자 ID      |
-| password    | varchar     |                        | 비밀번호       |
-| last_login  | timestamp   |                        | 마지막 로그인  |
-| is_superuser| int         |                        | 관리자 여부    |
-| username    | int         |                        | 사용자 이름    |
-| email       | int         |                        | 이메일         |
-| is_staff    | int         |                        | 스태프 여부    |
-| is_active   | int         |                        | 활성화 여부    |
-| date_joined | timestamp   |                        | 가입 날짜      |
+| username    | varchar     |                        | 사용자 이름    |
+| updatedAt   | timestamp   |                        | 마지막 로그인  |
+| createdAt   | timestamp   |                        | 가입 날짜      |
 ```
 
 ### Lectures Table
@@ -28,14 +23,18 @@
 ```markdown
 ### Table: lectures
 
-| Column      | Type    | Constraints               | Description   |
-|-------------|---------|---------------------------|---------------|
-| id          | int     | PK, auto-increment        | 특강 ID        |
-| title       | varchar |                           | 특강 제목      |
-| description | text    |                           | 특강 설명      |
-| date        | date    | NOT NULL                  | 특강 날짜      |
-| time        | time    | NOT NULL                  | 특강 시간      |
-| capacity    | int     | NOT NULL, default: 30     | 정원           |
+| Column      | Type        | Constraints               | Description   |
+|-------------|-------------|---------------------------|---------------|
+| id          | int         | PK, auto-increment        | 특강 ID        |
+| title       | varchar     |                           | 특강 제목      |
+| description | text        |                           | 특강 설명      |
+| date        | date        | NOT NULL                  | 특강 날짜      |
+| time        | time        | NOT NULL                  | 신청 시간      |
+| capacity    | int         | NOT NULL, default: 30     | 정원          |
+| currentEnrollment| int         | NOT NULL, default: 0     | 현재수강인원  |
+| createdAt   | timestamp   |                           | 가입 날짜      |
+| updatedAt   | timestamp   |                           | 마지막 로그인   |
+
 ```
 
 ### Applications Table
@@ -48,9 +47,11 @@
 | Column      | Type       | Constraints                | Description   |
 |-------------|------------|----------------------------|---------------|
 | id          | int        | PK, auto-increment         | 신청 ID        |
-| user_id     | int        | NOT NULL, unique           | 사용자 ID      |
+| user_id     | int        | NOT NULL, unique  FK       | 사용자 ID      |
 | lecture_id  | int        | NOT NULL, unique, FK       | 특강 ID        |
 | timestamp   | datetime   | NOT NULL, default: CURRENT_TIMESTAMP | 신청 시간  |
+| createdAt   | timestamp   |                           | 가입 날짜      |
+| updatedAt   | timestamp   |                           | 마지막 로그인   |
 ```
 ### Foreign Keys
 
@@ -70,15 +71,15 @@
 |      users        |          |      applications      |          |      lectures      |
 +-------------------+          +------------------------+          +--------------------+
 | id (PK)           |          | id (PK)                |          | id (PK)            |
-| password          | <------> | user_id (FK)           |          | title              |
-| last_login        |          | lecture_id (FK)        | <------> | description        |
-| is_superuser      |          | timestamp              |          | date               |
-| username          |          +------------------------+          | time               |
-| email             |                                              | capacity           |
-| is_staff          |                                              +--------------------+
-| is_active         |
-| date_joined       |
-+-------------------+
+| createdAt         | <------> | user_id (FK)           |          | title              |
+| updatedAt         |          | lecture_id (FK)        | <------> | description        |
+| username          |          | timestamp              |          | date               |
++-------------------+         +------------------------+          | time               |
+                                                                   | capacity           |
+                                                                   +--------------------+
+            
+                     
+
 ```
 
 
